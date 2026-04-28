@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.jef.vote-tracker</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/jef/CodeRepository/vote-auto-crawl/vote-tracker/scripts/scrape_and_publish.sh</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>/Users/jef/CodeRepository/vote-auto-crawl/vote-tracker</string>
+    <key>StartInterval</key>
+    <integer>1800</integer>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/Users/jef/CodeRepository/vote-auto-crawl/vote-tracker/logs/scraper.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/jef/CodeRepository/vote-auto-crawl/vote-tracker/logs/scraper.err.log</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin</string>
+    </dict>
+</dict>
+</plist>

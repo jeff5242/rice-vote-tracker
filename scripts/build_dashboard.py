@@ -1,0 +1,303 @@
+#!/usr/bin/env python3
+"""
+從 data/vote-history.jsonl 產生 docs/index.html 靜態儀表板（資料嵌入 HTML）。
+給 GitHub Pages 用。
+"""
+from __future__ import annotations
+
+import json
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+PROJECT_DIR = Path(__file__).resolve().parent.parent
+DATA_FILE = PROJECT_DIR / "data" / "vote-history.jsonl"
+DOCS_DIR = PROJECT_DIR / "docs"
+HTML_FILE = DOCS_DIR / "index.html"
+JSON_FILE = DOCS_DIR / "data.json"
+
+TPE = timezone(timedelta(hours=8))
+
+
+def load_records() -> list[dict]:
+    if not DATA_FILE.exists():
+        return []
+    out = []
+    for ln in DATA_FILE.read_text(encoding="utf-8").splitlines():
+        ln = ln.strip()
+        if not ln:
+            continue
+        try:
+            r = json.loads(ln)
+            if r.get("ok") and r.get("targets"):
+                out.append(r)
+        except json.JSONDecodeError:
+            continue
+    out.sort(key=lambda r: r["timestamp"])
+    return out
+
+
+HTML_TEMPLATE = """<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>2026 精饌米獎 票數監測</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif; background: #f7f5f0; color: #1a1a1a; margin: 0; padding: 16px; font-size: 14px; line-height: 1.5; }
+  .container { max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 20px; font-weight: 500; margin: 0 0 4px; }
+  .sub { color: #666; font-size: 12px; margin: 0 0 16px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 18px; }
+  .card { background: #ffffff; border-radius: 10px; padding: 14px 16px; border: 0.5px solid rgba(0,0,0,0.08); }
+  .card .lbl { color: #666; font-size: 12px; margin-bottom: 4px; }
+  .card .val { font-size: 24px; font-weight: 500; line-height: 1.1; }
+  .card .delta { font-size: 12px; color: #888; margin-top: 4px; }
+  .card.target1 { background: #e6f1fb; border-color: #b5d4f4; }
+  .card.target1 .val, .card.target1 .lbl { color: #0c447c; }
+  .card.target2 { background: #faece7; border-color: #f5c4b3; }
+  .card.target2 .val, .card.target2 .lbl { color: #712b13; }
+  .section { margin: 18px 0 8px; font-size: 14px; font-weight: 500; }
+  .panel { background: #fff; border: 0.5px solid rgba(0,0,0,0.08); border-radius: 10px; padding: 12px; margin-bottom: 14px; }
+  .chart-wrap { position: relative; height: 320px; }
+  .chart-wrap.short { height: 220px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: #666; margin-bottom: 8px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+  .tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .tbl th, .tbl td { padding: 7px 8px; text-align: right; border-bottom: 0.5px solid rgba(0,0,0,0.08); }
+  .tbl th:first-child, .tbl td:first-child { text-align: left; }
+  .tbl th { color: #666; font-weight: 500; background: #faf8f3; }
+  .tag-night { background: #faece7; color: #712b13; padding: 1px 7px; border-radius: 4px; font-size: 11px; }
+  .tag-day { background: #e1f5ee; color: #085041; padding: 1px 7px; border-radius: 4px; font-size: 11px; }
+  .empty { background: #faeeda; color: #633806; padding: 12px 14px; border-radius: 10px; }
+  footer { color: #999; font-size: 11px; margin-top: 24px; text-align: center; }
+  footer a { color: #555; }
+  @media (max-width: 480px) {
+    .card .val { font-size: 20px; }
+    .chart-wrap { height: 260px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>2026 精饌米獎 票數監測</h1>
+  <p class="sub" id="lastUpdate">__SUB__</p>
+
+  <div class="grid" id="metrics"></div>
+
+  <div class="section">票數時間序列</div>
+  <div class="panel">
+    <div class="legend">
+      <span><span class="dot" style="background:#185fa5"></span>大橋頂級CAS越光米</span>
+      <span><span class="dot" style="background:#d85a30"></span>金農職人臺灣越光米</span>
+      <span style="color:#aaa">深夜時段(00-06) 以陰影標示</span>
+    </div>
+    <div class="chart-wrap"><canvas id="lineChart" role="img" aria-label="兩位候選人票數時間走勢"></canvas></div>
+  </div>
+
+  <div class="section">每段抓取增量（票/30 分鐘）</div>
+  <div class="panel">
+    <div class="chart-wrap short"><canvas id="barChart" role="img" aria-label="每段票數增加量"></canvas></div>
+  </div>
+
+  <div class="section">深夜 vs 白天 平均增量</div>
+  <div class="panel" style="padding:0">
+    <table class="tbl" id="periodTbl">
+      <thead><tr><th>候選人</th><th>深夜 00-06 平均</th><th>白天 06-24 平均</th><th>倍數</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="section">最近 12 筆紀錄</div>
+  <div class="panel" style="padding:0; overflow-x:auto;">
+    <table class="tbl" id="recentTbl">
+      <thead><tr><th>時間</th><th>大橋</th><th>Δ</th><th>金農職人</th><th>Δ</th><th>時段</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <footer>
+    自動更新 · 每 30 分鐘 · 資料來源：<a href="https://taiwanriceaward2026.com.tw/" target="_blank" rel="noopener">2026 精饌米獎官網</a> · <a href="data.json">下載原始資料</a>
+  </footer>
+</div>
+
+<script>
+const RAW = __RAW__;
+const T1 = "大橋頂級CAS越光米";
+const T2 = "金農職人臺灣越光米";
+const C1 = "#185fa5";
+const C2 = "#d85a30";
+
+function fmtTime(iso) {
+  const d = new Date(iso);
+  return d.toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit", hour12: false });
+}
+function fmtFull(iso) {
+  const d = new Date(iso);
+  return d.toLocaleString("zh-TW", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false });
+}
+function isOvernight(iso) { const h = new Date(iso).getHours(); return h >= 0 && h < 6; }
+
+function buildSeries(records) {
+  return records.map(r => ({ t: r.timestamp, v1: r.targets[T1], v2: r.targets[T2] }));
+}
+
+function renderMetrics(series) {
+  const box = document.getElementById("metrics");
+  if (!series.length) { box.innerHTML = ""; return; }
+  const last = series[series.length - 1];
+  const first = series[0];
+  const gain1 = last.v1 - first.v1;
+  const gain2 = last.v2 - first.v2;
+  const elapsed_hr = Math.max(0.1, (new Date(last.t) - new Date(first.t)) / 3600000);
+  const rate1 = (gain1 / elapsed_hr).toFixed(1);
+  const rate2 = (gain2 / elapsed_hr).toFixed(1);
+  box.innerHTML = `
+    <div class="card target1"><div class="lbl">大橋頂級CAS越光米</div><div class="val">${last.v1.toLocaleString()}</div><div class="delta">期間 +${gain1}（${rate1}/hr）</div></div>
+    <div class="card target2"><div class="lbl">金農職人臺灣越光米</div><div class="val">${last.v2.toLocaleString()}</div><div class="delta">期間 +${gain2}（${rate2}/hr）</div></div>
+    <div class="card"><div class="lbl">資料點數</div><div class="val">${series.length}</div><div class="delta">每 30 分鐘抓取</div></div>
+    <div class="card"><div class="lbl">監測時長</div><div class="val">${elapsed_hr.toFixed(1)}h</div><div class="delta">起 ${fmtFull(first.t)}</div></div>
+  `;
+}
+
+function renderLineChart(series) {
+  const ctx = document.getElementById("lineChart").getContext("2d");
+  const labels = series.map(s => fmtTime(s.t));
+  const overnightBg = {
+    id: "overnightBg",
+    beforeDraw(chart) {
+      const { ctx, chartArea, scales } = chart;
+      if (!chartArea) return;
+      ctx.save();
+      ctx.fillStyle = "rgba(112,43,19,0.07)";
+      series.forEach((s, i) => {
+        if (isOvernight(s.t)) {
+          const xs = scales.x.getPixelForValue(i) - 6;
+          const xe = scales.x.getPixelForValue(i) + 6;
+          ctx.fillRect(xs, chartArea.top, xe - xs, chartArea.bottom - chartArea.top);
+        }
+      });
+      ctx.restore();
+    }
+  };
+  new Chart(ctx, {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        { label: T1, data: series.map(s => s.v1), borderColor: C1, backgroundColor: C1, tension: 0.2, pointRadius: 2.5, borderWidth: 2 },
+        { label: T2, data: series.map(s => s.v2), borderColor: C2, backgroundColor: C2, tension: 0.2, pointRadius: 2.5, borderWidth: 2, borderDash: [5, 4] },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { title: (it) => fmtFull(series[it[0].dataIndex].t) } } },
+      scales: { x: { ticks: { autoSkip: true, maxTicksLimit: 12, maxRotation: 0 } }, y: { beginAtZero: false } },
+    },
+    plugins: [overnightBg],
+  });
+}
+
+function renderBarChart(series) {
+  const ctx = document.getElementById("barChart").getContext("2d");
+  if (series.length < 2) return;
+  const deltas = [];
+  for (let i = 1; i < series.length; i++) {
+    deltas.push({ t: series[i].t, d1: series[i].v1 - series[i - 1].v1, d2: series[i].v2 - series[i - 1].v2 });
+  }
+  const recent = deltas.slice(-30);
+  new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: recent.map(d => fmtTime(d.t)),
+      datasets: [
+        { label: T1, data: recent.map(d => d.d1), backgroundColor: C1 },
+        { label: T2, data: recent.map(d => d.d2), backgroundColor: C2 },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { title: (it) => fmtFull(recent[it[0].dataIndex].t) } } },
+      scales: { x: { ticks: { autoSkip: true, maxTicksLimit: 10, maxRotation: 0 } }, y: { beginAtZero: true } },
+    },
+  });
+}
+
+function renderPeriodTable(series) {
+  const tbody = document.querySelector("#periodTbl tbody");
+  if (series.length < 2) { tbody.innerHTML = "<tr><td colspan='4'>資料不足</td></tr>"; return; }
+  const stats = { v1: { night: [], day: [] }, v2: { night: [], day: [] } };
+  for (let i = 1; i < series.length; i++) {
+    const bucket = isOvernight(series[i].t) ? "night" : "day";
+    stats.v1[bucket].push(series[i].v1 - series[i - 1].v1);
+    stats.v2[bucket].push(series[i].v2 - series[i - 1].v2);
+  }
+  const avg = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+  const row = (name, st) => {
+    const n = avg(st.night), d = avg(st.day);
+    const ratio = d > 0.01 ? (n / d).toFixed(2) + "x" : "—";
+    return `<tr><td>${name}</td><td>${n.toFixed(1)}</td><td>${d.toFixed(1)}</td><td>${ratio}</td></tr>`;
+  };
+  tbody.innerHTML = row(T1, stats.v1) + row(T2, stats.v2);
+}
+
+function renderRecentTable(series) {
+  const tbody = document.querySelector("#recentTbl tbody");
+  const startIdx = Math.max(0, series.length - 12);
+  const rows = [];
+  for (let i = startIdx; i < series.length; i++) {
+    const cur = series[i];
+    const prev = i > 0 ? series[i - 1] : null;
+    const d1 = prev ? cur.v1 - prev.v1 : 0;
+    const d2 = prev ? cur.v2 - prev.v2 : 0;
+    const tag = isOvernight(cur.t) ? '<span class="tag-night">深夜</span>' : '<span class="tag-day">白天</span>';
+    rows.push(`<tr><td>${fmtFull(cur.t)}</td><td>${cur.v1.toLocaleString()}</td><td>${prev ? "+" + d1 : "—"}</td><td>${cur.v2.toLocaleString()}</td><td>${prev ? "+" + d2 : "—"}</td><td>${tag}</td></tr>`);
+  }
+  tbody.innerHTML = rows.join("");
+}
+
+(function init() {
+  if (!RAW || !RAW.length) { document.getElementById("metrics").innerHTML = '<div class="empty" style="grid-column:1/-1">尚無資料，下次抓取後重新整理。</div>'; return; }
+  const series = buildSeries(RAW);
+  renderMetrics(series);
+  renderLineChart(series);
+  renderBarChart(series);
+  renderPeriodTable(series);
+  renderRecentTable(series);
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js"></script>
+</body>
+</html>"""
+
+
+def main() -> int:
+    DOCS_DIR.mkdir(parents=True, exist_ok=True)
+    records = load_records()
+    payload = [
+        {"timestamp": r["timestamp"], "targets": r["targets"]}
+        for r in records
+    ]
+    JSON_FILE.write_text(
+        json.dumps({"updated_at": datetime.now(TPE).isoformat(timespec="seconds"),
+                    "records": payload}, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+    sub = (
+        f"最後更新：{datetime.now(TPE).strftime('%Y-%m-%d %H:%M %z')}"
+        f" · 資料點：{len(payload)} 筆"
+    )
+    html = HTML_TEMPLATE.replace("__SUB__", sub).replace(
+        "__RAW__", json.dumps(payload, ensure_ascii=False)
+    )
+    HTML_FILE.write_text(html, encoding="utf-8")
+    print(f"Wrote {HTML_FILE} ({len(html)} chars, {len(payload)} records)")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

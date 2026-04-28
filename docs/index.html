@@ -46,7 +46,7 @@
 <body>
 <div class="container">
   <h1>2026 精饌米獎 票數監測</h1>
-  <p class="sub" id="lastUpdate">最後更新：2026-04-28 21:55 +0800 · 資料點：5 筆</p>
+  <p class="sub" id="lastUpdate">最後更新：2026-04-28 22:14 +0800 · 資料點：6 筆</p>
 
   <div class="grid" id="metrics"></div>
 
@@ -60,7 +60,7 @@
     <div class="chart-wrap"><canvas id="lineChart" role="img" aria-label="兩位候選人票數時間走勢"></canvas></div>
   </div>
 
-  <div class="section">每段抓取增量（票/30 分鐘）</div>
+  <div class="section">每段抓取增量（票/5 分鐘）</div>
   <div class="panel">
     <div class="chart-wrap short"><canvas id="barChart" role="img" aria-label="每段票數增加量"></canvas></div>
   </div>
@@ -82,12 +82,12 @@
   </div>
 
   <footer>
-    自動更新 · 每 30 分鐘 · 資料來源：<a href="https://taiwanriceaward2026.com.tw/" target="_blank" rel="noopener">2026 精饌米獎官網</a> · <a href="data.json">下載原始資料</a>
+    自動更新 · 每 5 分鐘 · 資料來源：<a href="https://taiwanriceaward2026.com.tw/" target="_blank" rel="noopener">2026 精饌米獎官網</a> · <a href="data.json">下載原始資料</a>
   </footer>
 </div>
 
 <script>
-const RAW = [{"timestamp": "2026-04-28T21:36:01+08:00", "targets": {"大橋頂級CAS越光米": 8726, "金農職人臺灣越光米": 8530}}, {"timestamp": "2026-04-28T21:36:09+08:00", "targets": {"大橋頂級CAS越光米": 8726, "金農職人臺灣越光米": 8531}}, {"timestamp": "2026-04-28T21:36:24+08:00", "targets": {"大橋頂級CAS越光米": 8726, "金農職人臺灣越光米": 8531}}, {"timestamp": "2026-04-28T21:50:41+08:00", "targets": {"大橋頂級CAS越光米": 8736, "金農職人臺灣越光米": 8533}}, {"timestamp": "2026-04-28T21:55:57+08:00", "targets": {"大橋頂級CAS越光米": 8740, "金農職人臺灣越光米": 8533}}];
+const RAW = [{"timestamp": "2026-04-28T21:36:01+08:00", "targets": {"大橋頂級CAS越光米": 8726, "金農職人臺灣越光米": 8530}}, {"timestamp": "2026-04-28T21:36:09+08:00", "targets": {"大橋頂級CAS越光米": 8726, "金農職人臺灣越光米": 8531}}, {"timestamp": "2026-04-28T21:36:24+08:00", "targets": {"大橋頂級CAS越光米": 8726, "金農職人臺灣越光米": 8531}}, {"timestamp": "2026-04-28T21:50:41+08:00", "targets": {"大橋頂級CAS越光米": 8736, "金農職人臺灣越光米": 8533}}, {"timestamp": "2026-04-28T21:55:57+08:00", "targets": {"大橋頂級CAS越光米": 8740, "金農職人臺灣越光米": 8533}}, {"timestamp": "2026-04-28T22:13:58+08:00", "targets": {"大橋頂級CAS越光米": 8750, "金農職人臺灣越光米": 8533}}];
 const T1 = "大橋頂級CAS越光米";
 const T2 = "金農職人臺灣越光米";
 const C1 = "#185fa5";
@@ -120,7 +120,7 @@ function renderMetrics(series) {
   box.innerHTML = `
     <div class="card target1"><div class="lbl">大橋頂級CAS越光米</div><div class="val">${last.v1.toLocaleString()}</div><div class="delta">期間 +${gain1}（${rate1}/hr）</div></div>
     <div class="card target2"><div class="lbl">金農職人臺灣越光米</div><div class="val">${last.v2.toLocaleString()}</div><div class="delta">期間 +${gain2}（${rate2}/hr）</div></div>
-    <div class="card"><div class="lbl">資料點數</div><div class="val">${series.length}</div><div class="delta">每 30 分鐘抓取</div></div>
+    <div class="card"><div class="lbl">資料點數</div><div class="val">${series.length}</div><div class="delta">每 5 分鐘抓取</div></div>
     <div class="card"><div class="lbl">監測時長</div><div class="val">${elapsed_hr.toFixed(1)}h</div><div class="delta">起 ${fmtFull(first.t)}</div></div>
   `;
 }

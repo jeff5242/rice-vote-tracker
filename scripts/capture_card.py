@@ -21,7 +21,8 @@ with sync_playwright() as p:
     page.wait_for_selector('.group-non-xiang:not(.is-hidden)', timeout=15000)
     page.wait_for_timeout(1500)
     # 找出 id="13"（大橋）的卡 element
-    el = page.locator('div.card-shell[data-name="大橋頂級CAS越光米"]').first
+    # 只截「.card」（圖 + 按鈕區），不含上方標題與下方介紹文字
+    el = page.locator('div.card-shell[data-name="大橋頂級CAS越光米"] > div.card').first
     el.scroll_into_view_if_needed()
     page.wait_for_timeout(800)
     el.screenshot(path=str(OUT))

@@ -32,9 +32,8 @@
   h1 { font-size: 22px; font-weight: 700; margin: 4px 0 12px; line-height: 1.35; }
   h1 .target { color: #b91c1c; }
 
-  /* 帶標示的卡片預覽 */
+  /* 卡片預覽 */
   .card-shot {
-    position: relative;
     background: #111;
     border-radius: 14px;
     overflow: hidden;
@@ -42,49 +41,6 @@
     box-shadow: 0 4px 16px rgba(0,0,0,0.18);
   }
   .card-shot img { width: 100%; display: block; }
-  /* 紅色閃動圈：覆蓋「我要投給它」按鈕位置 */
-  .annotate {
-    position: absolute;
-    left: 50%;
-    bottom: 3.5%;
-    transform: translateX(-50%);
-    width: 30%;
-    height: 11%;
-    border: 3px solid #ef4444;
-    border-radius: 10px;
-    pointer-events: none;
-    animation: pulse 1.4s ease-in-out infinite;
-  }
-  @keyframes pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.7); transform: translateX(-50%) scale(1); }
-    50% { box-shadow: 0 0 0 14px rgba(239,68,68,0); transform: translateX(-50%) scale(1.04); }
-  }
-  /* 紅色標籤指向按鈕 */
-  .annotate-label {
-    position: absolute;
-    left: 50%;
-    bottom: 17%;
-    transform: translateX(-50%);
-    background: #ef4444;
-    color: #fff;
-    padding: 6px 12px;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 700;
-    white-space: nowrap;
-    pointer-events: none;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-  }
-  .annotate-label::after {
-    content: "";
-    position: absolute;
-    left: 50%; bottom: -7px;
-    transform: translateX(-50%);
-    width: 0; height: 0;
-    border-left: 7px solid transparent;
-    border-right: 7px solid transparent;
-    border-top: 7px solid #ef4444;
-  }
 
   .product-meta { background: #fff; border-radius: 12px; padding: 12px 16px; margin-top: 12px; }
   .product-name { font-size: 16px; font-weight: 700; color: #5b3a00; margin: 0 0 2px; }
@@ -126,11 +82,9 @@
     <h1>請幫我投票給<br><span class="target">大橋頂級 CAS 越光米</span> 🌾</h1>
   </div>
 
-  <!-- 卡片預覽 + 標示按鈕位置 -->
+  <!-- 卡片預覽（紅框直接畫在圖片中，標示「我要投給它」按鈕） -->
   <div class="card-shot">
-    <img src="img/da-qiao-card.png" alt="大橋頂級CAS越光米 投票卡片">
-    <div class="annotate-label">點這裡 ↓</div>
-    <div class="annotate" aria-hidden="true"></div>
+    <img src="img/da-qiao-card.png" alt="大橋頂級CAS越光米 投票卡片，紅框處為「我要投給它」按鈕">
   </div>
 
   <div class="product-meta">
@@ -146,7 +100,7 @@
     <h3>進入網站後請這樣做</h3>
     <ol>
       <li>滾到「<b>大橋頂級 CAS 越光米</b>」這張卡（如上圖）</li>
-      <li>點卡片下方紅圈標示處的「<b>我要投給它</b>」</li>
+      <li>點紅框處的「<b>我要投給它</b>」</li>
       <li>用 Facebook 登入並留下姓名、手機（一次完成，往後同帳號免重填）</li>
       <li>看到「投票成功」的提示就完成囉！</li>
     </ol>

@@ -10,7 +10,7 @@
 <title>支持大橋頂級CAS越光米 · 2026 精饌米獎</title>
 <meta property="og:title" content="支持大橋頂級CAS越光米 · 2026 精饌米獎">
 <meta property="og:description" content="點擊立刻為「大橋頂級 CAS 越光米」投上一票！">
-<meta property="og:image" content="https://taiwanriceaward2026.com.tw/images/products/%E9%9D%9E%E9%A6%99%E7%B1%B3%E7%B5%84-%E5%A4%A7%E6%A9%8B%E9%A0%82%E7%B4%9ACAS%E8%B6%8A%E5%85%89%E7%B1%B3.jpg">
+<meta property="og:image" content="https://jeff5242.github.io/rice-vote-tracker/img/da-qiao-card.png">
 <style>
   :root { color-scheme: light; }
   * { box-sizing: border-box; }
@@ -31,17 +31,65 @@
   }
   h1 { font-size: 22px; font-weight: 700; margin: 4px 0 12px; line-height: 1.35; }
   h1 .target { color: #b91c1c; }
-  .product {
-    background: #fff; border-radius: 16px; padding: 12px; margin: 16px 0;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+
+  /* 帶標示的卡片預覽 */
+  .card-shot {
+    position: relative;
+    background: #111;
+    border-radius: 14px;
+    overflow: hidden;
+    margin: 16px 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
   }
-  .product img {
-    width: 100%; max-height: 280px; object-fit: contain;
-    border-radius: 8px; background: #faf3df;
+  .card-shot img { width: 100%; display: block; }
+  /* 紅色閃動圈：覆蓋「我要投給它」按鈕位置 */
+  .annotate {
+    position: absolute;
+    left: 50%;
+    bottom: 3.5%;
+    transform: translateX(-50%);
+    width: 30%;
+    height: 11%;
+    border: 3px solid #ef4444;
+    border-radius: 10px;
+    pointer-events: none;
+    animation: pulse 1.4s ease-in-out infinite;
   }
-  .product-name { font-size: 17px; font-weight: 700; margin: 12px 0 4px; color: #5b3a00; }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.7); transform: translateX(-50%) scale(1); }
+    50% { box-shadow: 0 0 0 14px rgba(239,68,68,0); transform: translateX(-50%) scale(1.04); }
+  }
+  /* 紅色標籤指向按鈕 */
+  .annotate-label {
+    position: absolute;
+    left: 50%;
+    bottom: 17%;
+    transform: translateX(-50%);
+    background: #ef4444;
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+    pointer-events: none;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  }
+  .annotate-label::after {
+    content: "";
+    position: absolute;
+    left: 50%; bottom: -7px;
+    transform: translateX(-50%);
+    width: 0; height: 0;
+    border-left: 7px solid transparent;
+    border-right: 7px solid transparent;
+    border-top: 7px solid #ef4444;
+  }
+
+  .product-meta { background: #fff; border-radius: 12px; padding: 12px 16px; margin-top: 12px; }
+  .product-name { font-size: 16px; font-weight: 700; color: #5b3a00; margin: 0 0 2px; }
   .product-company { font-size: 13px; color: #8a6d3b; }
-  .desc { font-size: 14px; color: #4a3d20; padding: 0 4px; }
+
   .btn {
     display: block; width: 100%;
     background: linear-gradient(180deg, #fb923c 0%, #ea580c 100%);
@@ -54,6 +102,7 @@
   }
   .btn:active { transform: scale(0.97); }
   .btn .arrow { display: inline-block; margin-left: 6px; }
+
   .steps {
     background: #fff; border-radius: 14px; padding: 14px 18px;
     margin: 16px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.04);
@@ -62,7 +111,7 @@
   .steps ol { padding-left: 22px; margin: 0; font-size: 14px; color: #4a3d20; }
   .steps li { margin: 8px 0; }
   .steps b { color: #b91c1c; }
-  .hint { font-size: 12px; color: #8a6d3b; text-align: center; margin: 14px 0 6px; }
+
   .deadline { font-size: 13px; text-align: center; color: #c2410c; font-weight: 500; margin-top: 6px; }
   footer { font-size: 11px; color: #8a6d3b; text-align: center; margin-top: 24px; }
   footer a { color: #5b3a00; }
@@ -77,11 +126,16 @@
     <h1>請幫我投票給<br><span class="target">大橋頂級 CAS 越光米</span> 🌾</h1>
   </div>
 
-  <div class="product">
-    <img src="https://taiwanriceaward2026.com.tw/images/products/%E9%9D%9E%E9%A6%99%E7%B1%B3%E7%B5%84-%E5%A4%A7%E6%A9%8B%E9%A0%82%E7%B4%9ACAS%E8%B6%8A%E5%85%89%E7%B1%B3.jpg" alt="大橋頂級 CAS 越光米" onerror="this.style.display='none'">
+  <!-- 卡片預覽 + 標示按鈕位置 -->
+  <div class="card-shot">
+    <img src="img/da-qiao-card.png" alt="大橋頂級CAS越光米 投票卡片">
+    <div class="annotate-label">點這裡 ↓</div>
+    <div class="annotate" aria-hidden="true"></div>
+  </div>
+
+  <div class="product-meta">
     <div class="product-name">大橋頂級 CAS 越光米</div>
     <div class="product-company">米屋智農股份有限公司　·　越光 1.5 公斤</div>
-    <p class="desc">由臺灣最資深團隊、績優稻米產銷契作集團產區專業栽培，嚴選當期作最高食味好米，頂級風味無可取代！</p>
   </div>
 
   <a id="goBtn" class="btn" href="https://taiwanriceaward2026.com.tw/?view=non-xiang&openExternalBrowser=1">
@@ -91,12 +145,11 @@
   <div class="steps">
     <h3>進入網站後請這樣做</h3>
     <ol>
-      <li>滾到「<b>大橋頂級 CAS 越光米</b>」這張卡（米袋包裝、白色背景）</li>
-      <li>點卡片上的橘色按鈕「<b>我要投給它</b>」</li>
+      <li>滾到「<b>大橋頂級 CAS 越光米</b>」這張卡（如上圖）</li>
+      <li>點卡片下方紅圈標示處的「<b>我要投給它</b>」</li>
       <li>用 Facebook 登入並留下姓名、手機（一次完成，往後同帳號免重填）</li>
       <li>看到「投票成功」的提示就完成囉！</li>
     </ol>
-    <p class="hint">小提醒：每天可投 3 次，越多次越給力 💪</p>
   </div>
 
   <div class="deadline">投票截止 4/30 (四) 23:59</div>

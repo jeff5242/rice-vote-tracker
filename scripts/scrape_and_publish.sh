@@ -26,9 +26,11 @@ fi
     log "build_dashboard failed"; exit 0;
 }
 
-# 3. git push（若有改動）
+# 3. git pull（與其他機器同步）→ commit data → push
 cd "$ROOT"
 if [ -d .git ]; then
+    # 先 pull 拉到其他機器或人工 push 上來的最新程式碼
+    git pull --rebase --autostash --quiet >> "$LOG" 2>&1 || log "pull failed (will retry next run)"
     git add -A docs/ data/ >> "$LOG" 2>&1
     if ! git diff --cached --quiet; then
         git -c user.name="vote-tracker auto" -c user.email="auto@local" \

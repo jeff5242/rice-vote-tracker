@@ -4,7 +4,7 @@
 
 ## 功能
 
-- 每 30 分鐘抓一次 [官網](https://taiwanriceaward2026.com.tw/) 的票數（直接解析 `data-name` / `data-votes`）
+- 每 5 分鐘抓一次 [官網](https://taiwanriceaward2026.com.tw/) 的票數（直接解析 `data-name` / `data-votes`）
 - 累積成時間序列 `data/vote-history.jsonl`
 - 自動產生靜態儀表板 `docs/index.html`，推到 GitHub Pages 公開分享
 - 可產出 Markdown 分析報告（`scripts/analyze.py`）
@@ -28,7 +28,7 @@ bash setup.sh
 # 3. 重建儀表板
 .venv/bin/python scripts/build_dashboard.py
 
-# 4. 啟動每 30 分鐘自動排程
+# 4. 啟動每 5 分鐘自動排程
 bash install-launchd.sh
 ```
 

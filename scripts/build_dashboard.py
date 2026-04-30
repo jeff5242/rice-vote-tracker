@@ -42,6 +42,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <meta name="robots" content="noindex, nofollow">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>2026 精饌米獎 票數監測</title>
 <style>
   :root { color-scheme: light; }
@@ -61,8 +64,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .card.target2 .val, .card.target2 .lbl { color: #712b13; }
   .section { margin: 18px 0 8px; font-size: 14px; font-weight: 500; }
   .panel { background: #fff; border: 0.5px solid rgba(0,0,0,0.08); border-radius: 10px; padding: 12px; margin-bottom: 14px; }
-  .chart-wrap { position: relative; height: 320px; }
-  .chart-wrap.short { height: 220px; }
+  .chart-scroll { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
+  .chart-scroll::-webkit-scrollbar { height: 8px; }
+  .chart-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 4px; }
+  .chart-inner { position: relative; height: 320px; min-width: 100%; }
+  .chart-inner.short { height: 220px; }
+  .scroll-hint { font-size: 11px; color: #aaa; text-align: right; margin-top: 4px; }
   .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: #666; margin-bottom: 8px; }
   .legend span { display: inline-flex; align-items: center; gap: 6px; }
   .dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
@@ -95,12 +102,18 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       <span><span class="dot" style="background:#d85a30"></span>金農職人臺灣越光米</span>
       <span style="color:#aaa">深夜時段(00-06) 以陰影標示</span>
     </div>
-    <div class="chart-wrap"><canvas id="lineChart" role="img" aria-label="兩位候選人票數時間走勢"></canvas></div>
+    <div class="chart-scroll" id="lineScroll">
+      <div class="chart-inner" id="lineInner"><canvas id="lineChart" role="img" aria-label="兩位候選人票數時間走勢"></canvas></div>
+    </div>
+    <div class="scroll-hint">← 左右滑動查看完整時段 →</div>
   </div>
 
-  <div class="section">每段抓取增量（票/30 分鐘）</div>
+  <div class="section">每段抓取增量（票/5 分鐘）</div>
   <div class="panel">
-    <div class="chart-wrap short"><canvas id="barChart" role="img" aria-label="每段票數增加量"></canvas></div>
+    <div class="chart-scroll" id="barScroll">
+      <div class="chart-inner short" id="barInner"><canvas id="barChart" role="img" aria-label="每段票數增加量"></canvas></div>
+    </div>
+    <div class="scroll-hint">← 左右滑動查看完整時段 →</div>
   </div>
 
   <div class="section">深夜 vs 白天 平均增量</div>
@@ -111,19 +124,20 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     </table>
   </div>
 
-  <div class="section">最近 12 筆紀錄</div>
-  <div class="panel" style="padding:0; overflow-x:auto;">
+  <div class="section">最近 120 筆紀錄</div>
+  <div class="panel" style="padding:0; overflow:auto; max-height:520px;">
     <table class="tbl" id="recentTbl">
-      <thead><tr><th>時間</th><th>大橋</th><th>Δ</th><th>金農職人</th><th>Δ</th><th>時段</th></tr></thead>
+      <thead style="position:sticky; top:0; background:#faf8f3; z-index:1;"><tr><th>時間</th><th>大橋</th><th>Δ</th><th>金農職人</th><th>Δ</th><th>時段</th></tr></thead>
       <tbody></tbody>
     </table>
   </div>
 
   <footer>
-    自動更新 · 每 30 分鐘 · 資料來源：<a href="https://taiwanriceaward2026.com.tw/" target="_blank" rel="noopener">2026 精饌米獎官網</a> · <a href="data.json">下載原始資料</a>
+    自動更新 · 每 5 分鐘 · 資料來源：<a href="https://taiwanriceaward2026.com.tw/" target="_blank" rel="noopener">2026 精饌米獎官網</a> · <a href="data.json">下載原始資料</a>
   </footer>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js"></script>
 <script>
 const RAW = __RAW__;
 const T1 = "大橋頂級CAS越光米";
@@ -158,13 +172,17 @@ function renderMetrics(series) {
   box.innerHTML = `
     <div class="card target1"><div class="lbl">大橋頂級CAS越光米</div><div class="val">${last.v1.toLocaleString()}</div><div class="delta">期間 +${gain1}（${rate1}/hr）</div></div>
     <div class="card target2"><div class="lbl">金農職人臺灣越光米</div><div class="val">${last.v2.toLocaleString()}</div><div class="delta">期間 +${gain2}（${rate2}/hr）</div></div>
-    <div class="card"><div class="lbl">資料點數</div><div class="val">${series.length}</div><div class="delta">每 30 分鐘抓取</div></div>
+    <div class="card"><div class="lbl">資料點數</div><div class="val">${series.length}</div><div class="delta">每 5 分鐘抓取</div></div>
     <div class="card"><div class="lbl">監測時長</div><div class="val">${elapsed_hr.toFixed(1)}h</div><div class="delta">起 ${fmtFull(first.t)}</div></div>
   `;
 }
 
 function renderLineChart(series) {
   const ctx = document.getElementById("lineChart").getContext("2d");
+  // 每點 24px，至少撐滿可視區
+  const inner = document.getElementById("lineInner");
+  const wantedW = Math.max(window.innerWidth - 60, series.length * 24);
+  inner.style.width = wantedW + "px";
   const labels = series.map(s => fmtTime(s.t));
   const overnightBg = {
     id: "overnightBg",
@@ -208,20 +226,23 @@ function renderBarChart(series) {
   for (let i = 1; i < series.length; i++) {
     deltas.push({ t: series[i].t, d1: series[i].v1 - series[i - 1].v1, d2: series[i].v2 - series[i - 1].v2 });
   }
-  const recent = deltas.slice(-30);
+  // 全段保留以便左右滑動
+  const inner = document.getElementById("barInner");
+  const wantedW = Math.max(window.innerWidth - 60, deltas.length * 28);
+  inner.style.width = wantedW + "px";
   new Chart(ctx, {
     type: "bar",
     data: {
-      labels: recent.map(d => fmtTime(d.t)),
+      labels: deltas.map(d => fmtTime(d.t)),
       datasets: [
-        { label: T1, data: recent.map(d => d.d1), backgroundColor: C1 },
-        { label: T2, data: recent.map(d => d.d2), backgroundColor: C2 },
+        { label: T1, data: deltas.map(d => d.d1), backgroundColor: C1 },
+        { label: T2, data: deltas.map(d => d.d2), backgroundColor: C2 },
       ],
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { title: (it) => fmtFull(recent[it[0].dataIndex].t) } } },
-      scales: { x: { ticks: { autoSkip: true, maxTicksLimit: 10, maxRotation: 0 } }, y: { beginAtZero: true } },
+      plugins: { legend: { display: false }, tooltip: { callbacks: { title: (it) => fmtFull(deltas[it[0].dataIndex].t) } } },
+      scales: { x: { ticks: { autoSkip: false, maxRotation: 45, minRotation: 0, font: { size: 10 } } }, y: { beginAtZero: true } },
     },
   });
 }
@@ -246,9 +267,10 @@ function renderPeriodTable(series) {
 
 function renderRecentTable(series) {
   const tbody = document.querySelector("#recentTbl tbody");
-  const startIdx = Math.max(0, series.length - 12);
+  const startIdx = Math.max(0, series.length - 120);
   const rows = [];
-  for (let i = startIdx; i < series.length; i++) {
+  // 由新到舊
+  for (let i = series.length - 1; i >= startIdx; i--) {
     const cur = series[i];
     const prev = i > 0 ? series[i - 1] : null;
     const d1 = prev ? cur.v1 - prev.v1 : 0;
@@ -267,9 +289,17 @@ function renderRecentTable(series) {
   renderBarChart(series);
   renderPeriodTable(series);
   renderRecentTable(series);
+  // 載入後自動捲到右側（最新資料）
+  requestAnimationFrame(() => {
+    const ls = document.getElementById("lineScroll");
+    const bs = document.getElementById("barScroll");
+    if (ls) ls.scrollLeft = ls.scrollWidth;
+    if (bs) bs.scrollLeft = bs.scrollWidth;
+  });
+  // 每 5 分鐘自動 reload 取得最新版本
+  setTimeout(() => { location.reload(); }, 5 * 60 * 1000);
 })();
 </script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js"></script>
 </body>
 </html>"""
 

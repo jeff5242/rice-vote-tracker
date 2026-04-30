@@ -12,7 +12,7 @@
     <key>WorkingDirectory</key>
     <string>/Users/jef/CodeRepository/vote-auto-crawl/vote-tracker</string>
     <key>StartInterval</key>
-    <integer>1800</integer>
+    <integer>300</integer>
     <key>RunAtLoad</key>
     <true/>
     <key>StandardOutPath</key>

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import re
+import ssl
 import sys
 import traceback
 import urllib.request
@@ -56,7 +57,10 @@ def fetch_html(url: str = URL, timeout: int = 20) -> str:
             "Accept-Language": "zh-TW,zh;q=0.9,en;q=0.8",
         },
     )
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    with urllib.request.urlopen(req, timeout=timeout, context=ctx) as resp:
         return resp.read().decode("utf-8", errors="replace")
 
 
